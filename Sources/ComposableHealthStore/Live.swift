@@ -12,6 +12,10 @@
 
             var manager = HealthStoreManager()
 
+            manager.connectionStatus = { id in
+                return dependencies[id]?.connectionStatus ?? .disconnected
+            }
+            
             manager.create = { id in
                 Effect.run { subscriber in
                     dependencies[id] = Dependencies(
@@ -74,6 +78,7 @@
     }
 
     private struct Dependencies {
+        var connectionStatus: ConnectionStatus = .disconnected
         var healthStore: HKHealthStore
         let subscriber: Effect<HealthStoreManager.Action, Never>.Subscriber
     }

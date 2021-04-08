@@ -23,16 +23,14 @@
             }
         }
 
+        public var connectionStatus: (AnyHashable) -> ConnectionStatus = { _ in _unimplemented("connectionStatus") }
+
         // MARK: - Variables
 
         var create: (AnyHashable) -> Effect<Action, Never> = { _ in _unimplemented("create") }
-
         var destroy: (AnyHashable) -> Effect<Never, Never> = { _ in _unimplemented("destroy") }
-
         var requestAuthorization: (AnyHashable, Set<HKSampleType>?, Set<HKObjectType>?) -> Effect<Never, Never> = { _, _, _ in _unimplemented("requestAuthorization") }
-
         var isHealthAuthorizedFor: (AnyHashable, Set<HKSampleType>, Set<HKObjectType>) -> Effect<Bool, Never> = { _, _, _ in _unimplemented("isHealthAuthorizedFor") }
-
         var startWatchApp: (AnyHashable, HKWorkoutConfiguration) -> Effect<Bool, Never> = { _, _ in _unimplemented("startWatchApp") }
 
         // MARK: - Functions
