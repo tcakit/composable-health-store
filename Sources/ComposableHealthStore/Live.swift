@@ -13,12 +13,14 @@
             var manager = HealthStoreManager()
 
             manager.connectionStatus = { id in
-                return dependencies[id]?.connectionStatus ?? .disconnected
+                return dependencies[id]?.connectionStatus ??  .unknown
             }
             
             manager.create = { id in
                 Effect.run { subscriber in
+                    
                     dependencies[id] = Dependencies(
+                        connectionStatus: ConnectionStatus(rawValue: UserDefaults.standard.integer(forKey: "\(HealthStoreManager.self)_status_key")) ?? .unknown,
                         healthStore: HKHealthStore(),
                         subscriber: subscriber
                     )
@@ -31,6 +33,8 @@
 
             manager.destroy = { id in
                 .fireAndForget {
+                    let statusKey = dependencies[id]?.connectionStatus ?? .unknown
+                    UserDefaults.standard.set(statusKey.rawValue, forKey: "\(HealthStoreManager.self)_status_key")
                     dependencies[id]?.subscriber.send(completion: .finished)
                     dependencies[id] = nil
                 }
@@ -40,6 +44,7 @@
                 .fireAndForget {
                     guard HKHealthStore.isHealthDataAvailable() else { return }
                     dependencies[id]?.healthStore.requestAuthorization(toShare: typesToShare, read: typeToRead) { _, _ in
+                        dependencies[id]?.connectionStatus = .connected
                     }
                 }
             }
@@ -78,7 +83,7 @@
     }
 
     private struct Dependencies {
-        var connectionStatus: ConnectionStatus = .disconnected
+        var connectionStatus: ConnectionStatus
         var healthStore: HKHealthStore
         let subscriber: Effect<HealthStoreManager.Action, Never>.Subscriber
     }
