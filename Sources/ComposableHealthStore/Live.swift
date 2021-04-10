@@ -12,9 +12,7 @@
 
             var manager = HealthStoreManager()
 
-            manager.connectionStatus = { id in
-                return dependencies[id]?.connectionStatus ??  .unknown
-            }
+            manager.connectionStatus = { id in return dependencies[id]?.connectionStatus ??  .unknown }
             
             manager.create = { id in
                 Effect.run { subscriber in
@@ -43,22 +41,25 @@
             manager.requestAuthorization = { id, typesToShare, typeToRead in
                 .fireAndForget {
                     guard HKHealthStore.isHealthDataAvailable() else { return }
-                    dependencies[id]?.healthStore.requestAuthorization(toShare: typesToShare, read: typeToRead) { _, _ in
-                        dependencies[id]?.connectionStatus = .connected
+                    dependencies[id]?.healthStore.requestAuthorization(toShare: typesToShare, read: typeToRead) { success, _ in
+                        let status: ConnectionStatus = success ? .connected : .disconnected
+                        dependencies[id]?.connectionStatus = status
+                        UserDefaults.standard.set(status.rawValue, forKey: "\(HealthStoreManager.self)_status_key")
+                        dependencies[id]?.subscriber.send(.authorizationComplete(true))
                     }
                 }
             }
 
             manager.isHealthAuthorizedFor = { id, typesToShare, typesToRead in
-                .future { futureCompletion in
+                .fireAndForget {
                     dependencies[id]?.healthStore.getRequestStatusForAuthorization(toShare: typesToShare, read: typesToRead, completion: { status, error in
                         switch error {
                         case .some:
                             break
                         case .none:
                             switch status {
-                            case .unnecessary: return futureCompletion(.success(true))
-                            default: return futureCompletion(.success(false))
+                            case .unnecessary: dependencies[id]?.subscriber.send(.authorizationComplete(true))
+                            default: dependencies[id]?.subscriber.send(.authorizationComplete(false))
                             }
                         }
                     })

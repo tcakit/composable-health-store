@@ -13,7 +13,9 @@
     }
 
     public struct HealthStoreManager {
-        public enum Action: Equatable {}
+        public enum Action: Equatable {
+            case authorizationComplete(Bool)
+        }
 
         public struct Error: Swift.Error, Equatable {
             public let error: NSError?
